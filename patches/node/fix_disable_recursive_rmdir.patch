@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shelley Vohr <shelley.vohr@gmail.com>
+Date: Mon, 16 Sep 2019 21:48:18 -0700
+Subject: fix: disable recursive rmdir
+
+This causes issues with our fs.promises overrides. It prevents the NativeModule map
+from being able to find the right module, and so even calling the getter for 
+fs.promises results in an error.
+
+diff --git a/lib/internal/fs/promises.js b/lib/internal/fs/promises.js
+index a642641acf59a58c89a23ce91f5e08f8792360fe..7b0967a8223ff9cb36342c30121bac0d80c5a73f 100644
+--- a/lib/internal/fs/promises.js
++++ b/lib/internal/fs/promises.js
+@@ -18,7 +18,6 @@ const {
+   ERR_METHOD_NOT_IMPLEMENTED
+ } = require('internal/errors').codes;
+ const { isUint8Array } = require('internal/util/types');
+-const { rimrafPromises } = require('internal/fs/rimraf');
+ const {
+   copyObject,
+   getDirents,
+@@ -297,10 +296,6 @@ async function rmdir(path, options) {
+   path = pathModule.toNamespacedPath(getValidatedPath(path));
+   options = validateRmdirOptions(options);
+ 
+-  if (options.recursive) {
+-    return rimrafPromises(path, options);
+-  }
+-
+   return binding.rmdir(path, kUsePromises);
+ }
+ 
